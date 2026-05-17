@@ -2,9 +2,7 @@
 
 Static landing page for the Walker platform.
 
-Walker turns everyday movement into wellness credits. The page is intentionally user-first:
-the iOS app and healthier screen habits lead the story, while partners and the SDK remain a
-supporting platform layer.
+The site entry point is the standalone Claude export committed as `index.html`.
 
 ## Run locally
 
@@ -16,6 +14,6 @@ python3 -m http.server 4173
 
 Then visit `http://localhost:4173`.
 
-## Assets
+## Render
 
-The initial visual assets came from the Claude design export in `Testing capabilities.zip`.
+Use `./` as the publish directory. No build command is required.
