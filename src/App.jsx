@@ -128,8 +128,8 @@ export default function App() {
     }, 300);
   };
 
-  const handleCopy = (text) => {
-    document.execCommand('copy') || navigator.clipboard?.writeText(text);
+  const handleCopy = async (text) => {
+    await navigator.clipboard?.writeText(text);
     setCopiedText(text);
     setTimeout(() => setCopiedText(''), 2000);
   };
@@ -167,7 +167,7 @@ export default function App() {
           
           <div className="hidden md:flex items-center space-x-8">
             <a href="#how-it-works" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">How It Works</a>
-            <a href="#ios-app" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">iOS App</a>
+            <a href="#how-it-works" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">iOS App</a>
             <a href="#api" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Walker API</a>
             <a href="#simulator" className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">Interactive Simulator</a>
             <span className="h-4 w-[1px] bg-neutral-800" />
@@ -209,7 +209,7 @@ export default function App() {
 
           {/* Call to Actions */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <a href="#ios-app" className="w-full sm:w-auto flex items-center justify-center space-x-3 bg-white hover:bg-neutral-200 text-black font-semibold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-white/5">
+            <a href="#how-it-works" className="w-full sm:w-auto flex items-center justify-center space-x-3 bg-white hover:bg-neutral-200 text-black font-semibold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-white/5">
               <Smartphone className="w-5 h-5" />
               <span>Get the iOS App</span>
             </a>
