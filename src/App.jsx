@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import walkerLogo from './assets/walker-logo.png';
 import { 
   Activity, 
   Smartphone, 
@@ -21,32 +22,14 @@ import {
   ChevronDown
 } from 'lucide-react';
 
-// Custom SVG Logo component matching the uploaded shoe concept
+// Raster logo keeps the landing page visually identical to the iOS app icon.
 const WalkerLogo = ({ className = "w-12 h-12" }) => (
-  <svg viewBox="0 0 200 200" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="200" height="200" rx="46" fill="#121214" />
-    <rect x="2" y="2" width="196" height="196" rx="44" stroke="#2A2A2F" strokeWidth="4" />
-    {/* Shoe Outline */}
-    <path 
-      d="M56 87L75 61C77 58 81 58 83 61L89 71C91 73 95 72 96 70L102 62C104 59 108 59 110 62L118 73C119 74 121 75 123 75H127C130 75 133 77 135 80L148 102C151 107 149 113 143 115L120 120C110 122 99 119 92 112L73 94C70 91 66 90 62 90H56" 
-      stroke="#FFFFFF" 
-      strokeWidth="6" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-    />
-    <path 
-      d="M59 95L95 120" 
-      stroke="#FFFFFF" 
-      strokeWidth="6" 
-      strokeLinecap="round" 
-    />
-    {/* Laces */}
-    <line x1="112" y1="78" x2="119" y2="73" stroke="#FFFFFF" strokeWidth="5" strokeLinecap="round" />
-    <line x1="118" y1="84" x2="125" y2="79" stroke="#FFFFFF" strokeWidth="5" strokeLinecap="round" />
-    <line x1="124" y1="90" x2="131" y2="85" stroke="#FFFFFF" strokeWidth="5" strokeLinecap="round" />
-    {/* Grounding line */}
-    <line x1="50" y1="130" x2="150" y2="130" stroke="#FFFFFF" strokeWidth="6" strokeLinecap="round" />
-  </svg>
+  <img
+    src={walkerLogo}
+    alt="Walker"
+    className={`${className} object-contain`}
+    draggable="false"
+  />
 );
 
 const SCREEN_TIME_CREDITS_PER_MINUTE = 10;
