@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Activity, 
   Smartphone, 
@@ -49,84 +49,104 @@ const WalkerLogo = ({ className = "w-12 h-12" }) => (
   </svg>
 );
 
+const SCREEN_TIME_CREDITS_PER_MINUTE = 10;
+const SCREEN_TIME_APP_POOL = ["Instagram", "TikTok", "Reddit"];
+const PARTNER_DEMO_DEDUCTIONS = {
+  mindfulness: 250,
+  languageLearning: 500,
+};
+const SDK_REFERENCE_ITEMS = [
+  {
+    name: "createWalkerConnectUrl",
+    detail: "Builds iOS deep links or hosted /connect URLs with clientId, externalUserId, redirectUri, and wallet scopes.",
+    signature: "createWalkerConnectUrl(input)",
+  },
+  {
+    name: "WalkerClient",
+    detail: "Creates a typed client with baseUrl, optional connectionToken, and optional custom fetch implementation.",
+    signature: "new WalkerClient({ baseUrl, connectionToken })",
+  },
+  {
+    name: "getBalance",
+    detail: "Reads the connected wallet balance, earned/spent totals, steps, and active calories.",
+    signature: "walker.getBalance()",
+  },
+  {
+    name: "listTransactions",
+    detail: "Lists wallet transactions with amount, type, reason, external reference, metadata, and idempotency key.",
+    signature: "walker.listTransactions({ limit: 50 })",
+  },
+  {
+    name: "spendCredits",
+    detail: "Deducts an explicit credit amount with reason, externalReference, metadata, and required idempotencyKey.",
+    signature: "walker.spendCredits(input)",
+  },
+  {
+    name: "WalkerApiError",
+    detail: "Exposes failed API status and detail so partner apps can show clear errors.",
+    signature: "error instanceof WalkerApiError",
+  },
+];
+const SDK_EXAMPLE_CODE = `import {
+  WalkerApiError,
+  WalkerClient,
+  createWalkerConnectUrl
+} from "@walker/walker-sdk-js";
+
+const connectUrl = createWalkerConnectUrl({
+  baseUrl: "https://walker-xl5k.onrender.com",
+  clientId: "wpk_partner_client_id",
+  externalUserId: "web-user-123",
+  partnerName: "Demo Web App",
+  redirectUri: "https://demo.example.com/walker/callback",
+  scopes: ["wallet:read", "wallet:spend"]
+});
+
+const walker = new WalkerClient({
+  baseUrl: "https://walker-xl5k.onrender.com",
+  connectionToken: "walker_connection_token"
+});
+
+const balance = await walker.getBalance();
+const history = await walker.listTransactions({ limit: 50 });
+
+const spend = await walker.spendCredits({
+  amount: 500,
+  reason: "reward_claim",
+  externalReference: "reward-123",
+  idempotencyKey: "web-user-123:reward-123",
+  metadata: {
+    description: "Example reward claim"
+  }
+});
+
+try {
+  await walker.spendCredits({
+    amount: 999999,
+    reason: "expensive_reward",
+    idempotencyKey: "web-user-123:expensive-reward"
+  });
+} catch (error) {
+  if (error instanceof WalkerApiError) {
+    console.log(error.status, error.detail);
+  }
+}`;
+
 export default function App() {
   // Simulator states
   const [steps, setSteps] = useState(6500);
-  const [selectedApp, setSelectedApp] = useState('instagram');
-  const [appCostPerMin, setAppCostPerMin] = useState(10); // 10 credits per minute
+  const screenTimeMinutes = Math.floor(steps / SCREEN_TIME_CREDITS_PER_MINUTE);
+  const isScreenTimeBlocked = screenTimeMinutes === 0;
   
   // App view selector states
   const [activeAppTab, setActiveAppTab] = useState('wallet');
   
   // Consent flow state
   const [consentStep, setConsentStep] = useState(1);
-  const [partnerApp, setPartnerApp] = useState('MindfulQuest');
   const [isConsenting, setIsConsenting] = useState(false);
   const [consentSuccess, setConsentSuccess] = useState(false);
 
-  // API Playground states
-  const [apiEndpoint, setApiEndpoint] = useState('GET_BALANCE');
-  const [apiResponse, setApiResponse] = useState({});
-  const [isLoadingApi, setIsLoadingApi] = useState(false);
   const [copiedText, setCopiedText] = useState('');
-
-  // Auto update API responses based on interactive steps
-  useEffect(() => {
-    updateApiResponse(apiEndpoint);
-  }, [steps, apiEndpoint]);
-
-  const updateApiResponse = (endpoint) => {
-    setIsLoadingApi(true);
-    setTimeout(() => {
-      let response = {};
-      switch (endpoint) {
-        case 'GET_BALANCE':
-          response = {
-            status: "success",
-            user: {
-              id: "usr_9x82jf0a",
-              username: "walk_enthusiast",
-              joined_at: "2026-02-14T08:00:00Z"
-            },
-            wallet: {
-              currency: "WALKER_CREDITS",
-              balance: steps, // 1:1 steps to credits
-              lifetime_earned: steps + 42100,
-              lifetime_spent: 42100,
-              last_sync: new Date().toISOString()
-            }
-          };
-          break;
-        case 'SYNC_ACTIVITY':
-          response = {
-            status: "success",
-            sync_session_id: "sync_8849201f",
-            data_source: "Apple HealthKit via Walker iOS Client",
-            steps_added: 1250,
-            new_balance: steps + 1250,
-            timestamp: new Date().toISOString()
-          };
-          break;
-        case 'POST_SPEND':
-          response = {
-            status: "success",
-            transaction: {
-              id: "tx_47a8d29b",
-              partner_id: "partner_mindful_quest",
-              credits_deducted: 150,
-              purpose: "Unlock Level 4 Zen Mode",
-              remaining_balance: Math.max(0, steps - 150),
-              timestamp: new Date().toISOString()
-            }
-          };
-          break;
-        default:
-          response = { message: "Select an endpoint" };
-      }
-      setApiResponse(response);
-      setIsLoadingApi(false);
-    }, 300);
-  };
 
   const handleCopy = async (text) => {
     await navigator.clipboard?.writeText(text);
@@ -308,7 +328,7 @@ export default function App() {
                 
                 <input 
                   type="range" 
-                  min="500" 
+                  min="0" 
                   max="20000" 
                   step="250"
                   value={steps} 
@@ -317,7 +337,7 @@ export default function App() {
                 />
                 
                 <div className="flex justify-between text-[11px] text-neutral-500 font-medium mt-2">
-                  <span>500 steps</span>
+                  <span>0 steps</span>
                   <span>5,000</span>
                   <span>10,000 (Recommended)</span>
                   <span>15,000</span>
@@ -342,7 +362,7 @@ export default function App() {
                   </p>
                 </div>
 
-                {/* Consumer App Unlock Options */}
+                {/* Consumer App Unlock Pool */}
                 <div className="bg-neutral-900 p-5 rounded-2xl border border-neutral-850/60 flex flex-col justify-between">
                   <div>
                     <div className="flex justify-between items-center mb-3">
@@ -350,39 +370,38 @@ export default function App() {
                       <span className="bg-neutral-850 text-neutral-300 text-[10px] tracking-wide px-2 py-0.5 rounded-md">Blocker Tool</span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 mb-4">
-                      {[
-                        { id: 'instagram', label: 'Instagram', cost: 12 },
-                        { id: 'tiktok', label: 'TikTok', cost: 15 },
-                        { id: 'reddit', label: 'Reddit', cost: 8 }
-                      ].map((app) => (
-                        <button
-                          key={app.id}
-                          onClick={() => {
-                            setSelectedApp(app.id);
-                            setAppCostPerMin(app.cost);
-                          }}
-                          className={`px-2 py-1.5 rounded-lg text-xs font-medium border transition-all text-center ${
-                            selectedApp === app.id
-                              ? 'bg-white border-white text-black font-semibold shadow-sm'
-                              : 'bg-neutral-850 hover:bg-neutral-800 border-neutral-800 text-neutral-400'
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-2 mb-4">
+                      {SCREEN_TIME_APP_POOL.map((app) => (
+                        <div
+                          key={app}
+                          className={`flex min-h-8 items-center justify-start xl:justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border text-left xl:text-center ${
+                            isScreenTimeBlocked
+                              ? 'bg-red-950/30 border-red-900/70 text-red-300'
+                              : 'bg-neutral-850 border-neutral-800 text-neutral-300'
                           }`}
                         >
-                          {app.label}
-                        </button>
+                          {isScreenTimeBlocked && <Lock className="w-3 h-3 shrink-0" />}
+                          <span className="min-w-0">{app}</span>
+                        </div>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex items-baseline space-x-1.5 mb-1">
-                      <span className="text-3xl font-mono font-bold text-white tracking-tight">
-                        {Math.floor(steps / appCostPerMin)}
-                      </span>
-                      <span className="text-xs text-neutral-400 font-medium">minutes available</span>
-                    </div>
+                    {isScreenTimeBlocked ? (
+                      <div className="text-3xl font-bold text-white tracking-tight mb-1">
+                        Apps blocked
+                      </div>
+                    ) : (
+                      <div className="flex items-baseline space-x-1.5 mb-1">
+                        <span className="text-3xl font-mono font-bold text-white tracking-tight">
+                          {screenTimeMinutes}
+                        </span>
+                        <span className="text-xs text-neutral-400 font-medium">minutes available</span>
+                      </div>
+                    )}
                     <p className="text-xs text-neutral-500">
-                      Calculated at {appCostPerMin} steps per minute of app access.
+                      Calculated at {SCREEN_TIME_CREDITS_PER_MINUTE} credits per minute across the whole selected app pool.
                     </p>
                   </div>
                 </div>
@@ -399,13 +418,19 @@ export default function App() {
                     A developer's third-party app can request authorization to spend your steps. Here's what your balance translates to in partner services:
                   </p>
                   <div className="bg-[#161619] p-3.5 rounded-xl border border-neutral-850 space-y-2">
-                    <div className="flex justify-between text-xs">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs">
                       <span className="text-neutral-500">Mindfulness App</span>
-                      <span className="text-white font-mono font-semibold">-{Math.min(steps, 250)} CR (Unlock Lesson)</span>
+                      <span className="text-right">
+                        <span className="block text-white font-mono font-semibold">-{PARTNER_DEMO_DEDUCTIONS.mindfulness} CR</span>
+                        <span className="block text-[10px] text-neutral-500 font-medium">(Unlock Lesson)</span>
+                      </span>
                     </div>
-                    <div className="flex justify-between text-xs border-t border-neutral-850 pt-1.5">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 text-xs border-t border-neutral-850 pt-1.5">
                       <span className="text-neutral-500">Language Learning App</span>
-                      <span className="text-white font-mono font-semibold">-{Math.min(steps, 500)} CR (Skip Daily Strike)</span>
+                      <span className="text-right">
+                        <span className="block text-white font-mono font-semibold">-{PARTNER_DEMO_DEDUCTIONS.languageLearning} CR</span>
+                        <span className="block text-[10px] text-neutral-500 font-medium">(Skip Daily Strike)</span>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -760,7 +785,7 @@ export default function App() {
         </div>
       </section>
 
-      {/* Developer API Console section */}
+      {/* Developer SDK section */}
       <section id="api" className="py-24 px-6 bg-[#0c0c0e] border-t border-neutral-900 relative">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -768,75 +793,39 @@ export default function App() {
             {/* API Content Column */}
             <div className="lg:col-span-5 space-y-6">
               <div className="inline-flex items-center space-x-2 bg-neutral-900 border border-neutral-850 px-3 py-1 rounded-full text-xs text-neutral-400">
-                <Code className="w-3.5 h-3.5 text-white animate-pulse" />
-                <span>REST API & Endpoints</span>
+                <Code className="w-3.5 h-3.5 text-white" />
+                <span>Walker SDK JS</span>
               </div>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white">
                 Simple, secure API integrations
               </h2>
               <p className="text-neutral-400 leading-relaxed">
-                Connect your user's healthy accomplishments to your application logic with ease. Our standard REST framework accepts simple tokenized requests, keeping your development pipeline swift and predictable.
+                The JavaScript SDK mirrors the current partner flow: create a Walker consent URL, store the returned connection token, read wallet state, list transactions, and spend explicit credit chunks with idempotency.
               </p>
 
-              {/* Endpoint selectors */}
+              {/* SDK method reference */}
               <div className="space-y-3">
-                <button
-                  onClick={() => setApiEndpoint('GET_BALANCE')}
-                  className={`w-full flex items-center justify-between p-4 rounded-xl text-left border transition-all ${
-                    apiEndpoint === 'GET_BALANCE'
-                      ? 'bg-neutral-900 border-neutral-700 shadow-sm'
-                      : 'bg-transparent border-neutral-900 hover:border-neutral-850'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-[10px] bg-green-950 text-green-400 font-bold px-2 py-0.5 rounded border border-green-900 uppercase font-mono">GET</span>
-                    <div>
-                      <h4 className="text-sm font-bold text-white">/v1/wallets/balance</h4>
-                      <p className="text-xs text-neutral-500 mt-0.5">Read synced step-credit balance</p>
+                {SDK_REFERENCE_ITEMS.map((item) => (
+                  <div
+                    key={item.name}
+                    className="w-full p-4 rounded-xl text-left border border-neutral-900 bg-transparent"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <h4 className="text-sm font-bold text-white">{item.name}</h4>
+                        <p className="text-xs text-neutral-500 mt-1 leading-relaxed">{item.detail}</p>
+                      </div>
+                      <Check className="w-4 h-4 text-neutral-500 shrink-0 mt-0.5" />
                     </div>
+                    <code className="block bg-neutral-950/70 border border-neutral-850 rounded-lg px-3 py-2 text-[11px] text-green-400 overflow-x-auto">
+                      {item.signature}
+                    </code>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-neutral-500" />
-                </button>
-
-                <button
-                  onClick={() => setApiEndpoint('SYNC_ACTIVITY')}
-                  className={`w-full flex items-center justify-between p-4 rounded-xl text-left border transition-all ${
-                    apiEndpoint === 'SYNC_ACTIVITY'
-                      ? 'bg-neutral-900 border-neutral-700 shadow-sm'
-                      : 'bg-transparent border-neutral-900 hover:border-neutral-850'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-[10px] bg-blue-950 text-blue-400 font-bold px-2 py-0.5 rounded border border-blue-900 uppercase font-mono">POST</span>
-                    <div>
-                      <h4 className="text-sm font-bold text-white">/v1/sync/activity</h4>
-                      <p className="text-xs text-neutral-500 mt-0.5">Request sync session execution</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-neutral-500" />
-                </button>
-
-                <button
-                  onClick={() => setApiEndpoint('POST_SPEND')}
-                  className={`w-full flex items-center justify-between p-4 rounded-xl text-left border transition-all ${
-                    apiEndpoint === 'POST_SPEND'
-                      ? 'bg-neutral-900 border-neutral-700 shadow-sm'
-                      : 'bg-transparent border-neutral-900 hover:border-neutral-850'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-[10px] bg-orange-950 text-orange-400 font-bold px-2 py-0.5 rounded border border-orange-900 uppercase font-mono">POST</span>
-                    <div>
-                      <h4 className="text-sm font-bold text-white">/v1/wallets/spend</h4>
-                      <p className="text-xs text-neutral-500 mt-0.5">Deduct credits on explicit user consent</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-neutral-500" />
-                </button>
+                ))}
               </div>
             </div>
 
-            {/* Live Interactive API Response Console */}
+            {/* Static SDK Example */}
             <div className="lg:col-span-7 bg-[#111113] border border-neutral-800 rounded-3xl overflow-hidden shadow-2xl">
               
               {/* Console Header */}
@@ -845,68 +834,53 @@ export default function App() {
                   <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
                   <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
                   <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-                  <span className="text-xs text-neutral-400 font-mono ml-2">walker-interactive-shell -- bash</span>
+                  <span className="text-xs text-neutral-400 font-mono ml-2">walker-sdk-js.ts</span>
                 </div>
                 <div className="flex items-center space-x-2 bg-neutral-900 border border-neutral-800 rounded px-2 py-1">
-                  <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Live Sandbox</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Static SDK Example</span>
                 </div>
               </div>
 
-              {/* Shell Content Block */}
-              <div className="p-6 font-mono text-xs text-neutral-300 leading-relaxed overflow-x-auto min-h-[360px] flex flex-col justify-between">
-                <div>
-                  {/* Prompt */}
-                  <div className="mb-4">
-                    <span className="text-neutral-500">$</span> <span className="text-white">curl -X {apiEndpoint === 'GET_BALANCE' ? 'GET' : 'POST'} \</span> <br />
-                    <span className="text-neutral-500 pl-4">https://api.walker.wellness/v1/{apiEndpoint === 'GET_BALANCE' ? 'wallets/balance' : apiEndpoint === 'SYNC_ACTIVITY' ? 'sync/activity' : 'wallets/spend'} \</span> <br />
-                    <span className="text-neutral-500 pl-4">-H "Authorization: Bearer wk_live_sec_77af..." \</span> <br />
-                    {apiEndpoint === 'POST_SPEND' && (
-                      <span className="text-neutral-500 pl-4">-d '{"{"} "partner_id": "partner_mindful_quest", "credits": 150, "reason": "Zen level unlock" {"}"}'</span>
-                    )}
+              <div className="p-6">
+                <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Partner integration example</h3>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      No requests run here. This mirrors the SDK surface used by partner apps.
+                    </p>
                   </div>
-
-                  {/* Loading / Response Output */}
-                  <div className="mt-6 bg-neutral-950 p-4 rounded-xl border border-neutral-850 relative">
-                    <div className="absolute top-2 right-2 flex space-x-2">
-                      <button 
-                        onClick={() => handleCopy(JSON.stringify(apiResponse, null, 2))}
-                        className="text-neutral-500 hover:text-white transition-colors"
-                        title="Copy Response JSON"
-                      >
-                        {copiedText ? (
-                          <span className="text-[10px] text-green-500 font-sans">Copied!</span>
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-
-                    {isLoadingApi ? (
-                      <div className="flex items-center space-x-2 text-neutral-500 py-12 justify-center">
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Fetching API Response...</span>
-                      </div>
-                    ) : (
-                      <pre className="text-green-400 text-[11px] overflow-auto max-h-[220px]">
-                        {JSON.stringify(apiResponse, null, 2)}
-                      </pre>
-                    )}
-                  </div>
-                </div>
-
-                {/* Simulated Interactive Hint */}
-                <div className="mt-6 pt-4 border-t border-neutral-850 text-neutral-500 text-[11px] flex items-center justify-between">
-                  <span>✨ Try dragging the <strong>Steps Slider</strong> in the simulator section above to see this live balance react.</span>
-                  <button 
-                    onClick={() => updateApiResponse(apiEndpoint)}
-                    className="flex items-center space-x-1.5 hover:text-white transition-colors text-neutral-400 border border-neutral-800 px-2 py-1 rounded bg-neutral-900"
+                  <button
+                    onClick={() => handleCopy(SDK_EXAMPLE_CODE)}
+                    className="flex items-center justify-center gap-1.5 text-neutral-400 hover:text-white transition-colors border border-neutral-800 px-3 py-2 rounded-lg bg-neutral-900 text-xs font-semibold"
+                    title="Copy SDK example"
                   >
-                    <RefreshCw className="w-3 h-3" />
-                    <span>Run Query</span>
+                    {copiedText ? (
+                      <span className="text-green-500">Copied</span>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        <span>Copy</span>
+                      </>
+                    )}
                   </button>
                 </div>
-
+                <pre className="bg-neutral-950 p-4 rounded-xl border border-neutral-850 text-green-400 text-[11px] leading-relaxed overflow-auto max-h-[520px]">
+                  <code>{SDK_EXAMPLE_CODE}</code>
+                </pre>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px]">
+                  <div className="rounded-xl border border-neutral-850 bg-neutral-900/50 p-3">
+                    <div className="font-bold text-white mb-1">Scopes</div>
+                    <div className="text-neutral-500">wallet:read, wallet:spend</div>
+                  </div>
+                  <div className="rounded-xl border border-neutral-850 bg-neutral-900/50 p-3">
+                    <div className="font-bold text-white mb-1">Callback params</div>
+                    <div className="text-neutral-500">walker_connection_token, walker_connection_id</div>
+                  </div>
+                  <div className="rounded-xl border border-neutral-850 bg-neutral-900/50 p-3">
+                    <div className="font-bold text-white mb-1">Spend safety</div>
+                    <div className="text-neutral-500">Every spend call carries an idempotencyKey.</div>
+                  </div>
+                </div>
               </div>
 
             </div>
