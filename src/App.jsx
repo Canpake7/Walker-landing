@@ -1064,11 +1064,11 @@ export default function App() {
           <div className="pt-8 border-t border-neutral-900 flex flex-col sm:flex-row items-center justify-between text-[11px] text-neutral-500">
             <span>&copy; {new Date().getFullYear()} Walker Inc. All rights reserved.</span>
             <div className="flex space-x-4 mt-4 sm:mt-0">
-              <span className="hover:text-white transition-colors cursor-pointer">Privacy Guidelines</span>
+              <a href="/privacy.html" className="hover:text-white transition-colors">Privacy Policy</a>
               <span>&bull;</span>
-              <span className="hover:text-white transition-colors cursor-pointer">Consumer Terms</span>
+              <a href="/support.html" className="hover:text-white transition-colors">Support</a>
               <span>&bull;</span>
-              <span className="hover:text-white transition-colors cursor-pointer">API Agreement</span>
+              <a href="/privacy-choices.html" className="hover:text-white transition-colors">Privacy Choices</a>
             </div>
           </div>
 
